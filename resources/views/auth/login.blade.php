@@ -29,13 +29,11 @@
                     <span class="ml-2">{{ __('Remember me') }}</span>
                 </label>
             </div>
-
-            <div class="flex items-center justify-between">
-                @if (Route::has('password.request'))
-                    <a class="text-sm text-blue-600 hover:text-blue-800 underline" href="{{ route('password.request') }}">
-                        {{ __('Forgot your password?') }}
-                    </a>
-                @endif
+            <div>
+                <div class="mb-4 text-sm text-blue-600">
+                    Don't have an account?
+                    <a href="{{ route('register') }}" class="underline font-medium hover:text-blue-800 transition">Sign up</a>
+            </div>
 
                 <x-primary-button class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-6 py-2 rounded-lg shadow transition">
                     {{ __('Log in') }}

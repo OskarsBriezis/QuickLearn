@@ -57,10 +57,6 @@
   <i data-feather="help-circle"></i>
   <span x-show="open" class="truncate">Questions</span>
 </a>
-<a href="{{ route('user.categories.index') }}" class="flex items-center gap-3 p-2 rounded hover:bg-blue-100 transition-colors duration-300">
-  <i data-feather="users"></i>
-  <span x-show="open" class="truncate">Back to user page</span>
-</a>
     </nav>
 
     <!-- User & Logout -->

@@ -61,5 +61,8 @@ class QuizController extends Controller
     'attempt' => $result->id
     ])->with('success', 'Quiz submitted successfully!');
 }
-
+    public function start (Quiz $quiz) {
+        $questions = $quiz->limitedQuestions()->get();
+        return view('user.quizzes.start', compact('quiz', 'questions'));
+    }
 }

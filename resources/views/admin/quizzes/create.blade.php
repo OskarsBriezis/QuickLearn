@@ -19,6 +19,11 @@
                 @endforeach
             </select>
         </div>
+        <div>
+            <label class="block font-semibold mb-1"> Number of Questions per Attemp </label>
+            <input type="number" name="question_limit" value="{{ old('question_limit') }}" class="border p-2 w-full">
+            <p class="text-gray-500 text-sm" >Leave empty to include all questions</p>
+        </div>
 
         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
     </form>

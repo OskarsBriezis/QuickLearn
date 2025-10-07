@@ -12,6 +12,6 @@ class DashboardController extends Controller
     {
         $lessons = Lesson::with('category')->where('published', true)->get();
         $quizzes = Quiz::with('questions', 'lesson')->get();
-        return view('user.index', compact('lessons', 'quizzes'));
+        return view('user.dashboard', compact('lessons', 'quizzes'));
     }
 }

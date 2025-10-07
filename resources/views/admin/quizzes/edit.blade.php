@@ -21,6 +21,13 @@
             </select>
         </div>
 
+        <div>
+            <label class="block font-semibold">Question Limit</label>
+            <input type="number" name="question_limit" value="{{ old('question_limit', $quiz->question_limit) }}" class="border p-2 w-full">
+            <small class="text-gray-500">Leave empty for no limit</small>
+    </div>
+
+
         <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Update</button>
     </form>
 </div>

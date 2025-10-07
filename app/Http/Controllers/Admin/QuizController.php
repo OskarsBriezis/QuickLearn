@@ -22,16 +22,21 @@ class QuizController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'lesson_id' => 'required|exists:lessons,id',
-            'title' => 'required|string|max:255',
-        ]);
+{
+    $request->validate([
+        'lesson_id' => 'required|exists:lessons,id',
+        'title' => 'required|string|max:255',
+        'question_limit' => 'nullable|integer|min:1',
+    ]);
 
-        Quiz::create($request->all());
+    Quiz::create([
+        'lesson_id' => $request->lesson_id,
+        'title' => $request->title,
+        'question_limit' => $request->question_limit,
+    ]);
 
-        return redirect()->route('admin.quizzes.index')->with('success', 'Quiz created successfully.');
-    }
+    return redirect()->route('admin.quizzes.index')->with('success', 'Quiz created successfully.');
+}
 
     public function edit(Quiz $quiz)
     {
@@ -40,20 +45,19 @@ class QuizController extends Controller
     }
 
     public function update(Request $request, Quiz $quiz)
-    {
-        $request->validate([
-            'lesson_id' => 'required|exists:lessons,id',
-            'title' => 'required|string|max:255',
-        ]);
+{
+    $request->validate([
+        'lesson_id' => 'required|exists:lessons,id',
+        'title' => 'required|string|max:255',
+        'question_limit' => 'nullable|integer|min:1',
+    ]);
 
-        $quiz->update($request->all());
+    $quiz->update([
+        'lesson_id' => $request->lesson_id,
+        'title' => $request->title,
+        'question_limit' => $request->question_limit,
+    ]);
 
-        return redirect()->route('admin.quizzes.index')->with('success', 'Quiz updated successfully.');
-    }
-
-    public function destroy(Quiz $quiz)
-    {
-        $quiz->delete();
-        return redirect()->route('admin.quizzes.index')->with('success', 'Quiz deleted successfully.');
-    }
+    return redirect()->route('admin.quizzes.index')->with('success', 'Quiz updated successfully.');
+}
 }

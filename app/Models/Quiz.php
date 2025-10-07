@@ -25,4 +25,10 @@ class Quiz extends Model
     {
         return $this->hasMany(QuizResult::class);
     }
+
+    public function limitedQuestions() {
+        $limit = $this->question_limit ?? $this->questions()->count();
+        return $this->questions()->inRandomOrder()->take($limit);
+    }
+    
 }
