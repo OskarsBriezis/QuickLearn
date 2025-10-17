@@ -1,7 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+
 
 // Admin Controllers
 use App\Http\Controllers\CategoryController;
@@ -16,6 +18,19 @@ use App\Http\Controllers\User\LessonController as UserLessonController;
 use App\Http\Controllers\User\CategoryController as UserCategoryController;
 use App\Http\Controllers\User\QuizResultController as UserQuizResultController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\ProfileController;
+
+
+Route::get('/user/profile-picture/{filename}', function ($filename) {
+    $path = storage_path('app/public/profile_pictures/' . $filename);
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return Response::file($path);
+})->middleware('auth')->name('user.profile.picture');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -54,36 +69,22 @@ Route::middleware(['auth', 'is_admin'])
     ->name('questions.destroyAll');
 
     });
-
-/*
-|--------------------------------------------------------------------------
-| Profile Routes
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
 /*
 |--------------------------------------------------------------------------
 | User Routes
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth')
     ->prefix('user')
     ->name('user.')
     ->group(function () {
 
         // Dashboard
-        Route::get('/dashboard', [\App\Http\Controllers\User\DashboardController::class, 'index'])
-            ->name('dashboard');
+        Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
         // Redirect /user → /user/dashboard
-        Route::get('/', function () {
-            return redirect()->route('user.dashboard');
-        });
+        Route::get('/', fn() => redirect()->route('user.dashboard'));
 
         // Categories
         Route::resource('categories', UserCategoryController::class)->only(['index', 'show']);
@@ -95,27 +96,21 @@ Route::middleware('auth')
         Route::resource('quizzes', UserQuizController::class)->only(['index', 'show']);
 
         // Quiz submission
-        Route::post('quizzes/{quiz}/submit', [UserQuizController::class, 'submit'])
-            ->name('quizzes.submit');
+        Route::post('quizzes/{quiz}/submit', [UserQuizController::class, 'submit'])->name('quizzes.submit');
 
         // Quiz results / history
-        Route::get('history', [UserQuizResultController::class, 'historyCategories'])
-            ->name('history.categories');
+        Route::get('history', [UserQuizResultController::class, 'historyCategories'])->name('history.categories');
+        Route::get('history/{category}', [UserQuizResultController::class, 'historyQuizzes'])->name('history.quizzes');
+        Route::get('quizzes/{quiz}/results/{attempt?}', [UserQuizResultController::class, 'show'])->name('quizzes.results.show');
+        Route::get('quizzes/{quiz}/results/{attempt}/summary', [UserQuizResultController::class, 'summary'])->name('quizzes.results.summary');
 
-        Route::get('history/{category}', [UserQuizResultController::class, 'historyQuizzes'])
-            ->name('history.quizzes');
+        // Lesson completion
+        Route::post('lessons/{lesson}/complete', [UserLessonController::class, 'complete'])->name('lessons.complete');
 
-        Route::get('quizzes/{quiz}/results/{attempt?}', [UserQuizResultController::class, 'show'])
-            ->name('quizzes.results.show');
-
-        Route::get('quizzes/{quiz}/results/{attempt}/summary', [UserQuizResultController::class, 'summary'])
-            ->name('quizzes.results.summary');
-
-        Route::post('lessons/{lesson}/complete', [UserLessonController::class, 'complete'])
-            ->name('lessons.complete');
-
+        // ✅ Profile routes using correct controller
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
-
-
 
 require __DIR__.'/auth.php';

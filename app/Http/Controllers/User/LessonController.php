@@ -8,24 +8,38 @@ use App\Models\Lesson;
 class LessonController extends Controller
 {
     public function index() {
-    $lessons = Lesson::with('category')->where('published', true)->get();
-    return view('user.lessons.index', compact('lessons'));
-}
+        $userId = auth()->id();
 
-public function show(Lesson $lesson) {
-    return view('user.lessons.show', compact('lesson'));
-}
+        $lessons = Lesson::with('category')
+            ->where('user_id', $userId)
+            ->where('published', true)
+            ->get();
 
-public function complete(Lesson $lesson)
-{
-    $user = auth()->user();
+        return view('user.lessons.index', compact('lessons'));
+    }
 
-    // Attach lesson to completed list (many-to-many pivot)
-    $user->completedLessons()->syncWithoutDetaching([$lesson->id]);
+    public function show(Lesson $lesson) {
+        $this->authorizeLessonAccess($lesson);
 
-    return redirect()->route('user.lessons.show', $lesson->id)
-                     ->with('success', 'Lesson marked as completed!');
-}
+        return view('user.lessons.show', compact('lesson'));
+    }
 
+    public function complete(Lesson $lesson)
+    {
+        $this->authorizeLessonAccess($lesson);
 
+        $user = auth()->user();
+        $user->completedLessons()->syncWithoutDetaching([$lesson->id]);
+
+        return redirect()
+            ->route('user.lessons.show', $lesson->id)
+            ->with('success', 'Lesson marked as completed!');
+    }
+
+    private function authorizeLessonAccess(Lesson $lesson)
+    {
+        if ($lesson->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to this lesson.');
+        }
+    }
 }

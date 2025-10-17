@@ -11,53 +11,70 @@ class QuizController extends Controller
 {
     public function index()
     {
-        $quizzes = Quiz::with('lesson')->get();
+        // Only show quizzes created by the logged-in user
+        $quizzes = Quiz::with('lesson')
+            ->where('user_id', auth()->id())
+            ->get();
+
         return view('admin.quizzes.index', compact('quizzes'));
     }
 
     public function create()
     {
-        $lessons = Lesson::all();
+        // Only show lessons created by the logged-in user
+        $lessons = Lesson::where('user_id', auth()->id())->get();
+
         return view('admin.quizzes.create', compact('lessons'));
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'lesson_id' => 'required|exists:lessons,id',
-        'title' => 'required|string|max:255',
-        'question_limit' => 'nullable|integer|min:1',
-    ]);
+    {
+        $request->validate([
+            'lesson_id' => 'required|exists:lessons,id',
+            'title' => 'required|string|max:255',
+            'question_limit' => 'nullable|integer|min:1',
+        ]);
 
-    Quiz::create([
-        'lesson_id' => $request->lesson_id,
-        'title' => $request->title,
-        'question_limit' => $request->question_limit,
-    ]);
+        Quiz::create([
+            'lesson_id' => $request->lesson_id,
+            'title' => $request->title,
+            'question_limit' => $request->question_limit,
+            'user_id' => auth()->id(), // ✅ Attach logged-in user
+        ]);
 
-    return redirect()->route('admin.quizzes.index')->with('success', 'Quiz created successfully.');
-}
+        return redirect()->route('admin.quizzes.index')->with('success', 'Quiz created successfully.');
+    }
 
     public function edit(Quiz $quiz)
     {
-        $lessons = Lesson::all();
+        // Prevent editing quizzes that belong to another user
+        if ($quiz->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $lessons = Lesson::where('user_id', auth()->id())->get();
+
         return view('admin.quizzes.edit', compact('quiz', 'lessons'));
     }
 
     public function update(Request $request, Quiz $quiz)
-{
-    $request->validate([
-        'lesson_id' => 'required|exists:lessons,id',
-        'title' => 'required|string|max:255',
-        'question_limit' => 'nullable|integer|min:1',
-    ]);
+    {
+        if ($quiz->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
 
-    $quiz->update([
-        'lesson_id' => $request->lesson_id,
-        'title' => $request->title,
-        'question_limit' => $request->question_limit,
-    ]);
+        $request->validate([
+            'lesson_id' => 'required|exists:lessons,id',
+            'title' => 'required|string|max:255',
+            'question_limit' => 'nullable|integer|min:1',
+        ]);
 
-    return redirect()->route('admin.quizzes.index')->with('success', 'Quiz updated successfully.');
-}
+        $quiz->update([
+            'lesson_id' => $request->lesson_id,
+            'title' => $request->title,
+            'question_limit' => $request->question_limit,
+        ]);
+
+        return redirect()->route('admin.quizzes.index')->with('success', 'Quiz updated successfully.');
+    }
 }

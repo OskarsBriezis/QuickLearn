@@ -22,7 +22,7 @@ public function create()
     return view('admin.lessons.create', compact('categories'));
 }
 
-public function store(\Illuminate\Http\Request $request)
+public function store(Request $request)
 {
     $data = $request->validate([
         'category_id' => 'required|exists:categories,id',
@@ -31,8 +31,14 @@ public function store(\Illuminate\Http\Request $request)
         'media_url'   => 'nullable|url',
         'published'   => 'nullable|boolean',
     ]);
+
     $data['published'] = $request->boolean('published');
+
+    // ✅ Attach the logged-in user's ID
+    $data['user_id'] = auth()->id();
+
     \App\Models\Lesson::create($data);
+
     return redirect()->route('admin.lessons.index')->with('success', 'Lesson created.');
 }
 
@@ -56,7 +62,7 @@ public function store(\Illuminate\Http\Request $request)
     /**
      * Update the specified resource in storage.
      */
-    public function update(\Illuminate\Http\Request $request, \App\Models\Lesson $lesson)
+    public function update(Request $request, \App\Models\Lesson $lesson)
 {
     $data = $request->validate([
         'category_id' => 'required|exists:categories,id',
@@ -65,17 +71,17 @@ public function store(\Illuminate\Http\Request $request)
         'media_url'   => 'nullable|url',
         'published'   => 'nullable|boolean',
     ]);
+
     $data['published'] = $request->boolean('published');
+
+    // ✅ Optional: prevent users from updating another user's lesson
+    if ($lesson->user_id !== auth()->id()) {
+        abort(403, 'Unauthorized action.');
+    }
+
     $lesson->update($data);
+
     return redirect()->route('admin.lessons.index')->with('success', 'Lesson updated.');
 }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(\App\Models\Lesson $lesson)
-{
-    $lesson->delete();
-    return back()->with('success', 'Lesson deleted.');
-}
 }

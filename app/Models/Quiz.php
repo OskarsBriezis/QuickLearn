@@ -9,6 +9,9 @@ class Quiz extends Model
     protected $fillable = [
         'title',
         'lesson_id',
+        'description',
+        'question_limit',
+        'user_id'
     ];
 
     public function lesson()

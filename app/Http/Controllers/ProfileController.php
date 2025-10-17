@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -17,7 +19,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
+        return view('user.profile.edit', [
             'user' => $request->user(),
         ]);
     }
@@ -25,30 +27,48 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(Request $request)
+
+public function update(Request $request): RedirectResponse
 {
     $user = auth()->user();
 
     $request->validate([
         'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
         'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'password' => 'nullable|string|min:8|confirmed', // ✅ Add this
     ]);
 
-    if ($request->hasFile('profile_picture')) {
-        // Delete old picture if exists
-        if ($user->profile_picture) {
-            Storage::delete($user->profile_picture);
-        }
+    // Update basic fields
+    $user->name = $request->name;
+    $user->email = $request->email;
 
-        $path = $request->file('profile_picture')->store('profile_pictures');
-        $user->profile_picture = $path;
+    // ✅ Update password only if provided
+    if ($request->filled('password')) {
+        $user->password = Hash::make($request->password);
     }
 
-    $user->name = $request->name;
+    // ✅ Handle profile picture upload (as before)
+    if ($request->hasFile('profile_picture')) {
+        if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+            Storage::disk('public')->delete($user->profile_picture);
+        }
+
+        $image = $request->file('profile_picture');
+        $manager = new ImageManager(new Driver());
+        $imageObject = $manager->read($image);
+        $resized = $imageObject->scale(width: 300, height: 300)->toJpeg(quality: 90);
+
+        $filename = 'profile_pictures/' . uniqid() . '.jpg';
+        Storage::disk('public')->put($filename, $resized);
+        $user->profile_picture = $filename;
+    }
+
     $user->save();
 
-    return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
+    return redirect()->route('user.profile.edit')->with('success', 'Profile updated successfully.');
 }
+
 
     /**
      * Delete the user's account.
@@ -61,8 +81,11 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        if ($user->profile_picture && Storage::exists($user->profile_picture)) {
+            Storage::delete($user->profile_picture);
+        }
 
+        Auth::logout();
         $user->delete();
 
         $request->session()->invalidate();
